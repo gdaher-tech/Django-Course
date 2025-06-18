@@ -124,3 +124,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # URL para redirecionamento de usuários não autenticados
 LOGIN_URL = '/login/'
+
+LOGIN_REDIRECT_URL = '/painel/'         # após login bem-sucedido
+LOGOUT_REDIRECT_URL = '/'               # após logout
+
+INSTALLED_APPS = [
+    ...,
+    'sndot', 
+]

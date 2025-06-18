@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .forms import (
+from .form import (
     ImportarDoadoresForm, CadastrarDoadorForm,
     ImportarReceptoresForm, CadastrarReceptorForm
 )
@@ -8,8 +8,12 @@ from .models import Doador, Receptor
 from datetime import datetime
 import json
 from .models import Administrador
-from .forms import AdministradorForm
+from .form import CadastrarAdministradorForm
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from .models import Orgao, CentroDistribuicao
+from django.contrib.auth.decorators import login_required
+from .models import Orgao, CentroDistribuicao
 from django.contrib.auth.decorators import login_required
 
 # --- Página Inicial ---
@@ -214,13 +218,13 @@ def deletar_receptor(request, pk):
 
 def cadastrar_administrador(request):
     if request.method == 'POST':
-        form = AdministradorForm(request.POST)
+        form = CadastrarAdministradorForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Administrador cadastrado com sucesso.")
             return redirect('listar_administradores')
     else:
-        form = AdministradorForm()
+        form = CadastrarAdministradorForm()
     return render(request, 'cadastrar_administrador.html', {'form': form})
 
 def listar_administradores(request):
@@ -252,13 +256,13 @@ def buscar_administrador(request, pk):
 def editar_administrador(request, pk):
     administrador = get_object_or_404(Administrador, pk=pk)
     if request.method == 'POST':
-        form = AdministradorForm(request.POST, instance=administrador)
+        form = CadastrarAdministradorForm(request.POST, instance=administrador)
         if form.is_valid():
             form.save()
             messages.success(request, "Administrador atualizado com sucesso.")
             return redirect('listar_administradores')
     else:
-        form = AdministradorForm(instance=administrador)
+        form = CadastrarAdministradorForm(instance=administrador)
     return render(request, 'editar_administrador.html', {'form': form})
 
 def excluir_administrador(request, pk):
@@ -268,3 +272,67 @@ def excluir_administrador(request, pk):
         messages.success(request, "Administrador excluído com sucesso.")
         return redirect('listar_administradores')
     return render(request, 'excluir_administrador.html', {'administrador': administrador})
+
+# --- ORGAOS ---
+
+@login_required
+def listar_orgaos(request):
+    orgaos = Orgao.objects.all()
+    return render(request, 'orgaos/listar_orgaos.html', {'orgaos': orgaos})
+
+@login_required
+def adicionar_orgao(request):
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        descricao = request.POST.get('descricao')
+
+        if nome:
+            Orgao.objects.create(nome=nome, descricao=descricao)
+            messages.success(request, "Órgão adicionado com sucesso.")
+            return redirect('listar_orgaos')
+        else:
+            messages.error(request, "O nome do órgão é obrigatório.")
+
+    return render(request, 'orgaos/adicionar_orgao.html')
+
+@login_required
+def editar_orgao(request, pk):
+    orgao = get_object_or_404(Orgao, pk=pk)
+    if request.method == 'POST':
+        orgao.nome = request.POST.get('nome')
+        orgao.descricao = request.POST.get('descricao')
+        orgao.save()
+        messages.success(request, "Órgão atualizado com sucesso.")
+        return redirect('listar_orgaos')
+    return render(request, 'orgaos/editar_orgao.html', {'orgao': orgao})
+
+@login_required
+def excluir_orgao(request, pk):
+    orgao = get_object_or_404(Orgao, pk=pk)
+    if request.method == 'POST':
+        orgao.delete()
+        messages.success(request, "Órgão excluído com sucesso.")
+        return redirect('listar_orgaos')
+    return render(request, 'orgaos/excluir_orgao.html', {'orgao': orgao})
+
+@login_required
+def painel_admin(request):
+    return render(request, 'painel_admin.html')
+
+@login_required
+def listar_centros(request):
+    centros = CentroDistribuicao.objects.all()
+    return render(request, 'centros/listar_centros.html', {'centros': centros})
+
+@login_required
+def editar_centro(request, pk):
+    centro = get_object_or_404(CentroDistribuicao, pk=pk)
+    if request.method == 'POST':
+        centro.nome = request.POST.get('nome')
+        centro.estado = request.POST.get('estado')
+        centro.cidade = request.POST.get('cidade')
+        centro.save()
+        messages.success(request, "Centro atualizado com sucesso.")
+        return redirect('listar_centros')
+    return render(request, 'centros/editar_centro.html', {'centro': centro})
+
